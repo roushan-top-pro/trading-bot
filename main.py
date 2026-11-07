@@ -1,12 +1,14 @@
 import os
 import time
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 import pandas as pd
 import yfinance as yf
 
 # ================= Configuration =================
-TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  # Apna bot token yahan dalein
-TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"      # Apna chat ID yahan dalein
+TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  # Telegram bot token yahan dalein
+TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"      # Telegram chat ID yahan dalein
 
 # Assets to Monitor
 SYMBOLS = {
@@ -48,14 +50,13 @@ def scan_market():
             prev_close = float(data['Close'].iloc[-2])
             pivot, r1, s1 = calculate_levels(data)
 
-            # Signal Logic
             signal = None
             if close > r1 and prev_close <= r1:
-                signal = "BUY / CALL"
+                signal = "BUY / CALL (खरीदें)"
                 sl = s1
                 target = close + (2 * (close - sl))
             elif close < s1 and prev_close >= s1:
-                signal = "SELL / PUT"
+                signal = "SELL / PUT (बेचें)"
                 sl = r1
                 target = close - (2 * (sl - close))
 
@@ -65,8 +66,8 @@ def scan_market():
                     f"📊 <b>Asset:</b> {name}\n"
                     f"🎯 <b>Signal / संकेत:</b> {signal}\n"
                     f"💵 <b>Price / मूल्य:</b> {close:.2f}\n"
-                    f"🛡️ <b>SL:</b> {sl:.2f}\n"
-                    f"🎯 <b>Target (1:2 R:R):</b> {target:.2f}\n\n"
+                    f"🛡️ <b>SL / स्टॉपलॉस:</b> {sl:.2f}\n"
+                    f"🎯 <b>Target / लक्ष्य (1:2):</b> {target:.2f}\n\n"
                     f"<i>Dual-Language Automated Market Scanner</i>"
                 )
                 send_telegram_alert(msg)
@@ -75,11 +76,26 @@ def scan_market():
         except Exception as err:
             print(f"Error scanning {name}: {err}")
 
-# Start Notification
-send_telegram_alert("🚀 <b>Trading Bot Live on Cloud!</b>\n24/7 Scanner shuru ho chuka hai.")
+# Dummy Web Server to satisfy Render Free Tier Port Binding
+class DummyServer(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Trading Bot is Active and Running!")
 
-# Continuous Loop (Every 5 minutes)
-while True:
-    print("Scanning markets...")
-    scan_market()
-    time.sleep(300)
+def run_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), DummyServer)
+    server.serve_forever()
+
+def run_bot_loop():
+    send_telegram_alert("🚀 <b>Trading Bot Live on Cloud!</b>\n24/7 Scanner shuru ho chuka hai.")
+    while True:
+        print("Scanning markets...")
+        scan_market()
+        time.sleep(300)
+
+if __name__ == "__main__":
+    t = threading.Thread(target=run_bot_loop, daemon=True)
+    t.start()
+    run_server()
