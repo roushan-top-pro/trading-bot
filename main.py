@@ -7,8 +7,8 @@ import pandas as pd
 import yfinance as yf
 
 # ================= Configuration =================
-TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  # Telegram bot token yahan dalein
-TELEGRAM_CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"      # Telegram chat ID yahan dalein
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "9219234073:AAGAnfOwkw0p-KzIDl8kdzgs-s6BkGWgkJQ")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "6861153040")
 
 # Assets to Monitor
 SYMBOLS = {
